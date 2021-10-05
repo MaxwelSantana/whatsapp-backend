@@ -1,9 +1,18 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import Messages from './dbMessages.js';
+import Pusher from 'pusher';
 
 const app = express();
 const port = process.env.PORT || 9000;
+
+const pusher = new Pusher({
+    appId: '1277041',
+    key: '1ef8341e29de91db578b',
+    secret: 'd8805a8ab6fa34a094fe',
+    cluster: 'us2',
+    useTLS: true,
+});
 
 app.use(express.json());
 
@@ -17,6 +26,18 @@ const connection_url =
 mongoose.connect(connection_url, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+});
+
+const db = mongoose.connection;
+db.once('open', () => {
+    console.log('DB CONNECTED');
+
+    const msgCollection = db.collection('messagecontents');
+    const changeStream = msgCollection.watch();
+
+    changeStream.on('change', (change) => {
+        console.log('Change', change);
+    });
 });
 
 app.get('/', (req, res) => {
